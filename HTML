@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק טריוויה אינסופי</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --secondary: #ec4899;
+            --bg: #f3f4f6;
+            --text: #1f2937;
+            --card-bg: #ffffff;
+            --correct: #10b981;
+            --wrong: #ef4444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .answer-btn {
+            background-color: #f3f4f6;
+            color: var(--text);
+            border: 2px solid #e5e7eb;
+        }
+
+        .answer-btn:hover {
+            background-color: #e5e7eb;
+            box-shadow: none;
+        }
+
+        .answer-btn.correct {
+            background-color: var(--correct);
+            color: white;
+            border-color: var(--correct);
+        }
+
+        .answer-btn.wrong {
+            background-color: var(--wrong);
+            color: white;
+            border-color: var(--wrong);
+        }
+
+        #game-screen, #end-screen {
+            display: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        #question-text {
+            font-size: 22px;
+            margin-bottom: 30px;
+            min-height: 60px;
+        }
+
+        .feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 25px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="start-screen">
+    <h1>טריוויה אינסופית 🧠</h1>
+    <p>בכל משחק תקבלו 10 שאלות אקראיות מתוך מאגר ענק.</p>
+    <button class="btn" onclick="startGame()">התחל משחק</button>
+</div>
+
+<div class="container" id="game-screen">
+    <div class="stats">
+        <span id="score-display">ניקוד: 0</span>
+        <span id="progress-display">שאלה 1 מתוך 10</span>
+    </div>
+    <div id="question-text">טוען שאלה...</div>
+    <div id="answers-container">
+        <!-- כפתורי התשובות ייווצרו כאן דינמית -->
+    </div>
+    <div class="feedback" id="feedback-display"></div>
+</div>
+
+<div class="container" id="end-screen">
+    <h1>המשחק נגמר! 🎉</h1>
+    <p>הניקוד הסופי שלך הוא:</p>
+    <h2 id="final-score" style="font-size: 40px; color: var(--primary);">0 / 10</h2>
+    <button class="btn" onclick="startGame()">שחק שוב (שאלות חדשות)</button>
+</div>
+
+<script>
+    // מאגר ענק של שאלות
+    const questionBank = [
+        { q: "מהי בירת ישראל?", a: ["תל אביב", "ירושלים", "חיפה", "אילת"], correct: 1 },
+        { q: "כמה צלעות יש למשולש?", a: ["4", "5", "3", "6"], correct: 2 },
+        { q: "איזה כוכב לכת הכי קרוב לשמש?", a: ["נוגה", "מאדים", "כדור הארץ", "חמה"], correct: 3 },
+        { q: "מי צייר את המונה ליזה?", a: ["וינסנט ואן גוך", "לאונרדו דה וינצ'י", "פאבלו פיקאסו", "מיכלאנג'לו"], correct: 1 },
+        { q: "מהו החומר הקשה ביותר בטבע?", a: ["ברזל", "יהלום", "זהב", "טיטניום"], correct: 1 },
+        { q: "כמה רגליים יש לעכביש?", a: ["6", "8", "10", "4"], correct: 1 },
+        { q: "באיזו יבשת נמצאת ברזיל?", a: ["אפריקה", "דרום אמריקה", "צפון אמריקה", "אירופה"], correct: 1 },
+        { q: "מהו האוקיינוס הגדול ביותר?", a: ["האוקיינוס השקט", "האוקיינוס האטלנטי", "האוקיינוס ההודי", "אוקיינוס הקרח הצפוני"], correct: 0 },
+        { q: "איזו חיה היא המהירה ביותר על היבשה?", a: ["אריה", "צבי", "ברדלס (צ'יטה)", "סוס"], correct: 2 },
+        { q: "כמה שעות יש ביממה?", a: ["12", "24", "48", "60"], correct: 1 },
+        { q: "מהו ההר הגבוה בעולם?", a: ["קילימנג'רו", "מון בלאן", "האברסט", "הר חרמון"], correct: 2 },
+        { q: "מהו הצבע שנוצר מערבוב של כחול וצהוב?", a: ["ירוק", "סגול", "כתום", "חום"], correct: 0 },
+        { q: "איזה גז אנחנו נושמים כדי לחיות?", a: ["פחמן דו חמצני", "מימן", "חנקן", "חמצן"], correct: 3 },
+        { q: "באיזה תאריך חוגגים את יום העצמאות של ארה\"ב?", a: ["4 ביולי", "1 במאי", "14 ביולי", "31 באוקטובר"], correct: 0 },
+        { q: "מהי היבשת הקטנה ביותר בעולם?", a: ["אירופה", "אוסטרליה", "אנטארקטיקה", "דרום אמריקה"], correct: 1 },
+        { q: "איזו מתכת היא נוזלית בטמפרטורת החדר?", a: ["כספית", "ברזל", "עופרת", "נחושת"], correct: 0 },
+        { q: "מי גילה את כוח המשיכה?", a: ["אלברט איינשטיין", "אייזק ניוטון", "גלילאו גליליי", "ניקולה טסלה"], correct: 1 },
+        { q: "כמה שחקנים יש בקבוצת כדורגל על המגרש?", a: ["9", "10", "11", "12"], correct: 2 },
+        { q: "מהו הנהר הארוך בעולם?", a: ["האמזונס", "הנילוס", "המיסיסיפי", "היאנגצה"], correct: 1 },
+        { q: "איזה איבר בגוף האדם שואב דם?", a: ["כבד", "ריאות", "מוח", "לב"], correct: 3 },
+        { q: "מאיזה צמח מכינים שוקולד?", a: ["קפה", "קקאו", "תה", "וניל"], correct: 1 },
+        { q: "מהו הספורט הפופולרי ביותר בעולם?", a: ["כדורסל", "טניס", "כדורגל", "קריקט"], correct: 2 },
+        { q: "איזו ציפור אינה מסוגלת לעוף אך שוחה מצוין?", a: ["ינשוף", "פינגווין", "יען", "תוכי"], correct: 1 },
+        { q: "מי כתב את סדרת ספרי הארי פוטר?", a: ["ג'.ק. רולינג", "ג'.ר.ר. טולקין", "סטיבן קינג", "ריק ריירדן"], correct: 0 },
+        { q: "כמה חודשים בשנה יש בהם 28 ימים לפחות?", a: ["1", "6", "12", "0"], correct: 2 },
+        { q: "מהי בירת צרפת?", a: ["לונדון", "מדריד", "ברלין", "פריז"], correct: 3 },
+        { q: "איך קוראים לתינוק של פרה?", a: ["סייח", "עגל", "טלה", "גור"], correct: 1 },
+        { q: "מהי עיר הבירה של יפן?", a: ["סיאול", "בייג'ינג", "טוקיו", "קיוטו"], correct: 2 },
+        { q: "איזה כוכב לכת ידוע בטבעות שלו?", a: ["שבתאי", "צדק", "אורנוס", "נפטון"], correct: 0 },
+        { q: "מי היה ראש הממשלה הראשון של ישראל?", a: ["יצחק רבין", "מנחם בגין", "דוד בן גוריון", "גולדה מאיר"], correct: 2 },
+        { q: "מהי השפה המדוברת ביותר בעולם (כשפת אם)?", a: ["אנגלית", "ספרדית", "מנדרינית (סינית)", "הינדי"], correct: 2 },
+        { q: "מהו הפרי הלאומי של ישראל?", a: ["תפוח", "רימון", "תפוז", "צבר (סברס)"], correct: 3 },
+        { q: "כמה צבעים יש בקשת בענן?", a: ["5", "6", "7", "8"], correct: 2 },
+        { q: "מהם שלושת צבעי היסוד?", a: ["אדום, צהוב וכחול", "אדום, ירוק וכחול", "שחור, לבן ואפור", "כתום, ירוק וסגול"], correct: 0 },
+        { q: "איזה חוש קשור לעצב הריח?", a: ["ראייה", "טעם", "שמיעה", "ריח"], correct: 3 },
+        { q: "באיזה משחק משתמשים במילה 'שחמט'?", a: ["דמקה", "שש בש", "שחמט", "מונופול"], correct: 2 },
+        { q: "מהי בירת אנגליה?", a: ["לונדון", "מנצ'סטר", "ליברפול", "אדינבורו"], correct: 0 },
+        { q: "איזו מדינה היא הגדולה ביותר בשטחה בעולם?", a: ["קנדה", "ארצות הברית", "רוסיה", "סין"], correct: 2 },
+        { q: "מה קורה למים בטמפרטורה של 0 מעלות צלזיוס?", a: ["רותחים", "קופאים", "מתאדים", "נשארים רגילים"], correct: 1 },
+        { q: "מי היה הנשיא הראשון של ארצות הברית?", a: ["אברהם לינקולן", "תומאס ג'פרסון", "ג'ורג' וושינגטון", "ג'ון אדמס"], correct: 2 },
+        // אפשר להוסיף כאן עוד אלפי שאלות באותו מבנה בדיוק
+    ];
+
+    let currentQuestions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let canClick = true;
+
+    const startScreen = document.getElementById('start-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const endScreen = document.getElementById('end-screen');
+    const questionText = document.getElementById('question-text');
+    const answersContainer = document.getElementById('answers-container');
+    const scoreDisplay = document.getElementById('score-display');
+    const progressDisplay = document.getElementById('progress-display');
+    const feedbackDisplay = document.getElementById('feedback-display');
+    const finalScoreDisplay = document.getElementById('final-score');
+
+    // פונקציה לערבוב מערך (אלגוריתם פישר-ייטס)
+    function shuffleArray(array) {
+        let shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    function startGame() {
+        // בחר 10 שאלות אקראיות מתוך המאגר
+        const shuffledBank = shuffleArray(questionBank);
+        currentQuestions = shuffledBank.slice(0, 10);
+        
+        currentQuestionIndex = 0;
+        score = 0;
+        canClick = true;
+        
+        updateScore();
+        
+        startScreen.style.display = 'none';
+        endScreen.style.display = 'none';
+        gameScreen.style.display = 'block';
+        
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        canClick = true;
+        feedbackDisplay.textContent = "";
+        feedbackDisplay.style.color = "";
+        
+        const currentQ = currentQuestions[currentQuestionIndex];
+        questionText.textContent = currentQ.q;
+        progressDisplay.textContent = `שאלה ${currentQuestionIndex + 1} מתוך ${currentQuestions.length}`;
+        
+        // נקה כפתורים קודמים
+        answersContainer.innerHTML = '';
+        
+        // יצירת כפתורי תשובות
+        currentQ.a.forEach((answerText, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn answer-btn';
+            btn.textContent = answerText;
+            btn.onclick = () => checkAnswer(index, btn);
+            answersContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIndex, btnElement) {
+        if (!canClick) return; // מונע לחיצה כפולה
+        canClick = false;
+        
+        const currentQ = currentQuestions[currentQuestionIndex];
+        const buttons = answersContainer.querySelectorAll('.answer-btn');
+        
+        if (selectedIndex === currentQ.correct) {
+            // תשובה נכונה
+            btnElement.classList.add('correct');
+            feedbackDisplay.textContent = "✓ כל הכבוד! תשובה נכונה";
+            feedbackDisplay.style.color = "var(--correct)";
+            score++;
+            updateScore();
+        } else {
+            // תשובה שגויה
+            btnElement.classList.add('wrong');
+            buttons[currentQ.correct].classList.add('correct'); // סימון התשובה הנכונה
+            feedbackDisplay.textContent = "✗ טעות!";
+            feedbackDisplay.style.color = "var(--wrong)";
+        }
+        
+        // מעבר לשאלה הבאה לאחר השהייה קצרה
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuestions.length) {
+                loadQuestion();
+            } else {
+                endGame();
+            }
+        }, 1500); // 1.5 שניות המתנה
+    }
+
+    function updateScore() {
+        scoreDisplay.textContent = `ניקוד: ${score}`;
+    }
+
+    function endGame() {
+        gameScreen.style.display = 'none';
+        endScreen.style.display = 'block';
+        finalScoreDisplay.textContent = `${score} / ${currentQuestions.length}`;
+    }
+</script>
+
+</body>
+</html>
