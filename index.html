@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק טריוויה אינסופי</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" id="start-screen">
+        <h1>טריוויה אינסופית 🧠</h1>
+        <p>בכל משחק תקבלו 10 שאלות אקראיות מתוך מאגר ענק.</p>
+        <button class="btn" onclick="startGame()">התחל משחק</button>
+    </div>
+
+    <div class="container" id="game-screen" style="display: none;">
+        <div class="stats">
+            <span id="score-display">ניקוד: 0</span>
+            <span id="progress-display">שאלה 1 מתוך 10</span>
+        </div>
+        <div id="question-text">טוען שאלה...</div>
+        <div id="answers-container"></div>
+        <div class="feedback" id="feedback-display"></div>
+    </div>
+
+    <div class="container" id="end-screen" style="display: none;">
+        <h1>המשחק נגמר! 🎉</h1>
+        <p>הניקוד הסופי שלך הוא:</p>
+        <h2 id="final-score" style="font-size: 40px; color: #4F46E5;">0 / 10</h2>
+        <button class="btn" onclick="startGame()">שחק שוב (שאלות חדשות)</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
